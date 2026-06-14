@@ -99,28 +99,18 @@
 
     async function loadDashboard() {
         try {
-            const usersResponse = await fetch('${pageContext.request.contextPath}/api/admin/users', {
+            const response = await fetch('${pageContext.request.contextPath}/api/admin/dashboard', {
                 headers: {
                     'Authorization': 'Bearer ' + getToken()
                 }
             });
-            const usersResult = await usersResponse.json();
-            if (usersResult.code === 200) {
-                document.getElementById('totalUsers').textContent = usersResult.data.length;
+            const result = await response.json();
+            if (result.code === 200) {
+                document.getElementById('totalUsers').textContent = result.data.totalUsers || 0;
+                document.getElementById('totalProblems').textContent = result.data.totalProblems || 0;
+                document.getElementById('totalSubmissions').textContent = result.data.totalSubmissions || 0;
+                document.getElementById('todayActive').textContent = result.data.todayActive || 0;
             }
-
-            const problemsResponse = await fetch('${pageContext.request.contextPath}/api/admin/problems', {
-                headers: {
-                    'Authorization': 'Bearer ' + getToken()
-                }
-            });
-            const problemsResult = await problemsResponse.json();
-            if (problemsResult.code === 200) {
-                document.getElementById('totalProblems').textContent = problemsResult.data.length;
-            }
-
-            document.getElementById('totalSubmissions').textContent = '-';
-            document.getElementById('todayActive').textContent = '-';
         } catch (error) {
             console.error('加载失败:', error);
             showMessage('加载数据失败', 'error');

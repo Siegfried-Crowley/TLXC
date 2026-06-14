@@ -40,19 +40,23 @@ public class SubmissionService {
         submission.setErrorMessage(result.getErrorMessage());
         submission.setScoreDelta(0);
 
+        // 先保存提交记录，获得自增 ID
+        submissionMapper.insert(submission);
+
         if ("accepted".equals(result.getStatus())) {
             int acceptedCount = submissionMapper.countAcceptedByUserAndProblem(userId, problemId);
 
-            if (acceptedCount == 0) {
+            if (acceptedCount == 1) { // 包含刚插入的这次，所以 ==1 表示首次通过
                 int points = calculatePoints(problemId);
                 submission.setScoreDelta(points);
                 pointsService.addPoints(userId, problemId, points, "首次通过题目");
+                // 更新 score_delta
+                submissionMapper.updateScoreDelta(submission.getId(), points);
             }
         } else {
             wrongBookService.addToWrongBook(userId, problemId, submission.getId());
         }
 
-        submissionMapper.insert(submission);
         return submission;
     }
 

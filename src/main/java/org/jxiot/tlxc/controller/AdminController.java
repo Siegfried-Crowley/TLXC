@@ -3,11 +3,13 @@ package org.jxiot.tlxc.controller;
 import org.jxiot.tlxc.dto.ApiResponse;
 import org.jxiot.tlxc.entity.Problem;
 import org.jxiot.tlxc.entity.User;
+import org.jxiot.tlxc.mapper.SubmissionMapper;
 import org.jxiot.tlxc.service.ProblemService;
 import org.jxiot.tlxc.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +23,19 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SubmissionMapper submissionMapper;
+
+    @GetMapping("/dashboard")
+    public ApiResponse<Map<String, Object>> getDashboard() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", userService.getUserCount());
+        stats.put("totalProblems", problemService.getProblemCount());
+        stats.put("totalSubmissions", submissionMapper.count());
+        stats.put("todayActive", submissionMapper.countTodayActiveUsers());
+        return ApiResponse.success(stats);
+    }
 
     @GetMapping("/problems")
     public ApiResponse<List<Problem>> getAllProblems() {
@@ -51,6 +66,19 @@ public class AdminController {
     @DeleteMapping("/problems/{id}")
     public ApiResponse<Void> deleteProblem(@PathVariable Integer id) {
         problemService.deleteProblem(id);
+        return ApiResponse.success();
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ApiResponse<Void> deleteUser(@PathVariable Integer id) {
+        userService.deleteUser(id);
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/users/{id}/role")
+    public ApiResponse<Void> updateUserRole(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        String role = body.get("role");
+        userService.updateUserRole(id, role);
         return ApiResponse.success();
     }
 }

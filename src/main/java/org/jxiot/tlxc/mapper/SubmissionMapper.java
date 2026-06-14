@@ -23,4 +23,13 @@ public interface SubmissionMapper {
 
     @Select("SELECT COUNT(*) FROM submission WHERE user_id = #{userId} AND problem_id = #{problemId} AND status = 'accepted'")
     int countAcceptedByUserAndProblem(@Param("userId") Integer userId, @Param("problemId") Integer problemId);
+
+    @Update("UPDATE submission SET score_delta = #{scoreDelta} WHERE id = #{id}")
+    int updateScoreDelta(@Param("id") Integer id, @Param("scoreDelta") Integer scoreDelta);
+
+    @Select("SELECT COUNT(*) FROM submission")
+    int count();
+
+    @Select("SELECT COUNT(DISTINCT user_id) FROM submission WHERE DATE(created_at) = CURDATE()")
+    int countTodayActiveUsers();
 }

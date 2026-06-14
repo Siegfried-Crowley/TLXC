@@ -83,11 +83,22 @@
     }
 
     function displayResult(data) {
-        var html = '<div class="result-item"><span class="result-label">AI 分析</span><div class="result-value" style="white-space: pre-wrap;">' + escapeHtml(data.analysis) + '</div></div>';
-        if (data.correct) {
-            html += '<div class="result-item"><span class="result-label">结论</span><span style="color: #22c55e;">正确</span></div>';
-        } else {
-            html += '<div class="result-item"><span class="result-label">结论</span><span style="color: #ef4444;">不正确</span></div>';
+        var statusClass = data.status === 'accepted' ? 'status-accepted' :
+            data.status === 'wrong_answer' ? 'status-wrong_answer' : 'status-error';
+        var statusText = data.status === 'accepted' ? '通过' :
+            data.status === 'wrong_answer' ? '答案错误' : '运行错误';
+        var html = '<div class="result-item"><span class="result-label">状态</span><span class="submission-status ' + statusClass + '">' + statusText + '</span></div>' +
+            '<div class="result-item"><span class="result-label">运行时间:</span><span class="result-value">' + (data.runtimeMs || 0) + ' ms</span></div>' +
+            '<div class="result-item"><span class="result-label">测试用例:</span><span class="result-value">' + (data.passedCases || 0) + ' / ' + (data.totalCases || 0) + '</span></div>';
+        if (data.errorMessage) {
+            html += '<div class="result-item"><span class="result-label">错误信息:</span><div class="code-block" style="color: #ef4444;">' + escapeHtml(data.errorMessage) + '</div></div>';
+        }
+        html += '<div class="result-item"><span class="result-label">积分变化:</span><span class="result-value">+' + (data.scoreDelta || 0) + '</span></div>' +
+            '<div class="result-item"><span class="result-label">提交时间:</span><span class="result-value">' + formatDate(data.createdAt) + '</span></div>';
+        if (data.analysis) {
+            var aiVerdict = data.analysis.indexOf('正确') !== -1 && data.analysis.indexOf('不正确') === -1;
+            html += '<div class="result-item" style="margin-top:1rem;border-top:1px solid #2a3a52;padding-top:1rem;"><span class="result-label">AI 分析</span><div class="result-value" style="white-space: pre-wrap;color:#8aa1bd;">' + escapeHtml(data.analysis) + '</div></div>' +
+                '<div class="result-item"><span class="result-label">AI 结论</span><span style="color: ' + (aiVerdict ? '#22c55e' : '#ef4444') + ';">' + (aiVerdict ? '正确' : '不正确') + '</span></div>';
         }
         document.getElementById('resultContent').innerHTML = html;
         document.getElementById('submitResult').style.display = 'block';

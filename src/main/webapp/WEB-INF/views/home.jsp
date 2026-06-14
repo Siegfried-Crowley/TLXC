@@ -47,6 +47,21 @@
 <script src="${pageContext.request.contextPath}/js/common.js"></script>
 <script>
     checkAuth();
+    async function loadTodayContest() {
+        try {
+            const res = await fetch(CONTEXT_PATH + '/api/contests/today', {
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            const result = await res.json();
+            if (result.code === 200 && result.data) {
+                document.getElementById('todayProblems').textContent = '今日题目已发布';
+            } else {
+                document.getElementById('todayProblems').textContent = '暂无今日题目';
+            }
+        } catch (e) {
+            document.getElementById('todayProblems').textContent = '暂无今日题目';
+        }
+    }
     async function loadStats() {
         try {
             const response = await fetch(CONTEXT_PATH + '/api/stats/overview', {
@@ -62,6 +77,7 @@
             console.error('加载统计失败:', error);
         }
     }
+    loadTodayContest();
     loadStats();
 </script>
 </body>

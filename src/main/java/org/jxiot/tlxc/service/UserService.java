@@ -75,6 +75,24 @@ public class UserService {
         }
     }
 
+    public int getUserCount() {
+        return userMapper.count();
+    }
+
+    @Transactional
+    public void deleteUser(Integer id) {
+        userMapper.deleteById(id);
+    }
+
+    @Transactional
+    public void updateUserRole(Integer id, String role) {
+        User user = userMapper.findById(id);
+        if (user != null) {
+            user.setRole(role);
+            userMapper.update(user);
+        }
+    }
+
     @PostConstruct
     public void initAdmin() {
         try {
