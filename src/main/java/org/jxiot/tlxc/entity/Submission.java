@@ -9,6 +9,7 @@ public class Submission {
     private Integer userId;
     private Integer problemId;
     private String code;
+    private String language;
     private String status;
     private Integer runtimeMs;
     private Integer passedCases;

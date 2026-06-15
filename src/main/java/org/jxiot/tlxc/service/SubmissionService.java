@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SubmissionService {
@@ -25,13 +27,14 @@ public class SubmissionService {
     private WrongBookService wrongBookService;
 
     @Transactional
-    public Submission submitCode(Integer userId, Integer problemId, String code) {
+    public Submission submitCode(Integer userId, Integer problemId, String code, String language) {
         Submission submission = new Submission();
         submission.setUserId(userId);
         submission.setProblemId(problemId);
         submission.setCode(code);
+        submission.setLanguage(language != null ? language : "python");
 
-        JudgeResult result = judgeService.judgeCode(problemId, code);
+        JudgeResult result = judgeService.judgeCode(problemId, code, language);
 
         submission.setStatus(result.getStatus());
         submission.setRuntimeMs(result.getRuntimeMs());
@@ -46,11 +49,10 @@ public class SubmissionService {
         if ("accepted".equals(result.getStatus())) {
             int acceptedCount = submissionMapper.countAcceptedByUserAndProblem(userId, problemId);
 
-            if (acceptedCount == 1) { // 包含刚插入的这次，所以 ==1 表示首次通过
+            if (acceptedCount == 1) {
                 int points = calculatePoints(problemId);
                 submission.setScoreDelta(points);
                 pointsService.addPoints(userId, problemId, points, "首次通过题目");
-                // 更新 score_delta
                 submissionMapper.updateScoreDelta(submission.getId(), points);
             }
         } else {
@@ -64,8 +66,17 @@ public class SubmissionService {
         return 10;
     }
 
-    public List<Submission> getUserSubmissions(Integer userId, int limit) {
-        return submissionMapper.findByUserId(userId, limit);
+    public Map<String, Object> getUserSubmissions(Integer userId, int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        List<Submission> list = submissionMapper.findByUserId(userId, offset, pageSize);
+        long total = submissionMapper.countByUserId(userId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("totalPages", (int) Math.ceil((double) total / pageSize));
+        return result;
     }
 
     public List<Submission> getProblemSubmissions(Integer problemId) {

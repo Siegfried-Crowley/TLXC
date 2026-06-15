@@ -120,8 +120,8 @@
     async function askAI() {
         var code = document.getElementById('codeInput').value;
         var question = document.getElementById('questionInput').value;
-        if (!code.trim()) { alert('请输入代码'); return; }
-        if (!question.trim()) { alert('请输入问题'); return; }
+        if (!code.trim()) { toast('请输入代码', 'warning'); return; }
+        if (!question.trim()) { toast('请输入问题', 'warning'); return; }
         addMessage('user', code + '\n\n问题: ' + question);
         document.getElementById('questionInput').value = '';
         try {

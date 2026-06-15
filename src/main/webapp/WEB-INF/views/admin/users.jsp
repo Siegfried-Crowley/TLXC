@@ -41,7 +41,7 @@
     function checkAdmin() {
         var u = getUser();
         if (!u || u.role !== 'admin') {
-            alert('无权访问');
+            toast('无权访问', 'error');
             window.location.href = CONTEXT_PATH + '/home';
         }
     }
@@ -100,43 +100,45 @@
                 }
                 tbody.innerHTML = html;
             } else {
-                alert(data.message || '加载失败');
+                toast(data.message || '加载失败', 'error');
             }
         })
         .catch(function(err) {
             console.error(err);
-            alert('网络错误');
+            toast('网络错误', 'error');
         });
 
     function toggleRole(id, currentRole) {
         var newRole = currentRole === 'admin' ? 'user' : 'admin';
         var msg = newRole === 'admin' ? '确定将该用户提升为管理员？' : '确定将该用户降为普通用户？';
-        if (!confirm(msg)) return;
-        fetch(CONTEXT_PATH + '/api/admin/users/' + id + '/role', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-            body: JSON.stringify({ role: newRole })
-        })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data.code === 200) { alert('操作成功'); location.reload(); }
-                else { alert(data.message || '操作失败'); }
+        confirmDialog(msg, function() {
+            fetch(CONTEXT_PATH + '/api/admin/users/' + id + '/role', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                body: JSON.stringify({ role: newRole })
             })
-            .catch(function(err) { alert('网络错误'); });
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.code === 200) { toast('操作成功', 'success'); location.reload(); }
+                    else { toast(data.message || '操作失败', 'error'); }
+                })
+                .catch(function(err) { toast('网络错误', 'error'); });
+        });
     }
 
     function deleteUser(id, username) {
-        if (!confirm('确定删除用户 "' + username + '"？此操作不可恢复！')) return;
-        fetch(CONTEXT_PATH + '/api/admin/users/' + id, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data.code === 200) { alert('删除成功'); location.reload(); }
-                else { alert(data.message || '删除失败'); }
+        confirmDialog('确定删除用户 "' + username + '"？此操作不可恢复！', function() {
+            fetch(CONTEXT_PATH + '/api/admin/users/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             })
-            .catch(function(err) { alert('网络错误'); });
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.code === 200) { toast('删除成功', 'success'); location.reload(); }
+                    else { toast(data.message || '删除失败', 'error'); }
+                })
+                .catch(function(err) { toast('网络错误', 'error'); });
+        });
     }
 </script>
 </body>

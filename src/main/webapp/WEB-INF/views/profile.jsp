@@ -94,7 +94,7 @@
     }
 
     function showMessage(msg, type) {
-        alert(msg); // 简单实现，可替换为更好看的提示
+        toast(msg, type || 'info'); // 使用 toast 通知
     }
 
     function logout() {

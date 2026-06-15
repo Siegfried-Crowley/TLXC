@@ -57,7 +57,7 @@
         var date = new Date(dateStr);
         return isNaN(date.getTime()) ? dateStr : date.toLocaleString('zh-CN');
     }
-    function showMessage(msg, type) { alert(msg); }
+    function showMessage(msg, type) { toast(msg, type || 'info'); }
     function escapeHtml(str) {
         if (str == null) return '';
         return String(str).replace(/[&<>]/g, function(m) {

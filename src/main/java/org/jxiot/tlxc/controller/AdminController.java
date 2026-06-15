@@ -3,6 +3,7 @@ package org.jxiot.tlxc.controller;
 import org.jxiot.tlxc.dto.ApiResponse;
 import org.jxiot.tlxc.entity.Problem;
 import org.jxiot.tlxc.entity.User;
+import org.jxiot.tlxc.exception.BusinessException;
 import org.jxiot.tlxc.mapper.SubmissionMapper;
 import org.jxiot.tlxc.service.ProblemService;
 import org.jxiot.tlxc.service.UserService;
@@ -27,8 +28,15 @@ public class AdminController {
     @Autowired
     private SubmissionMapper submissionMapper;
 
+    private void checkAdmin(String role) {
+        if (role == null || !"admin".equals(role)) {
+            throw new BusinessException(403, "无权访问管理后台");
+        }
+    }
+
     @GetMapping("/dashboard")
-    public ApiResponse<Map<String, Object>> getDashboard() {
+    public ApiResponse<Map<String, Object>> getDashboard(@RequestAttribute String role) {
+        checkAdmin(role);
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalUsers", userService.getUserCount());
         stats.put("totalProblems", problemService.getProblemCount());
@@ -38,31 +46,39 @@ public class AdminController {
     }
 
     @GetMapping("/problems")
-    public ApiResponse<List<Problem>> getAllProblems() {
-        List<Problem> problems = problemService.getProblemList(null, null, null);
+    public ApiResponse<List<Problem>> getAllProblems(@RequestAttribute String role) {
+        checkAdmin(role);
+        Map<String, Object> result = problemService.getProblemList(null, null, null, null, 1, 10000);
+        List<Problem> problems = (List<Problem>) result.get("list");
         return ApiResponse.success(problems);
     }
 
     @GetMapping("/users")
-    public ApiResponse<List<User>> getAllUsers() {
+    public ApiResponse<List<User>> getAllUsers(@RequestAttribute String role) {
+        checkAdmin(role);
         List<User> users = userService.getTopUsers(1000);
         return ApiResponse.success(users);
     }
 
     @PostMapping("/problems")
-    public ApiResponse<Problem> createProblem(@RequestBody Problem problem, @RequestAttribute Integer userId) {
+    public ApiResponse<Problem> createProblem(@RequestBody Problem problem,
+                                              @RequestAttribute Integer userId,
+                                              @RequestAttribute String role) {
+        checkAdmin(role);
         problem.setCreatedBy(userId);
         Problem created = problemService.createProblem(problem);
         return ApiResponse.success(created);
     }
 
     @PutMapping("/problems/{id}")
-    public ApiResponse<Void> updateProblem(@PathVariable Integer id, @RequestBody Problem problem) {
+    public ApiResponse<Void> updateProblem(@PathVariable Integer id,
+                                           @RequestBody Problem problem,
+                                           @RequestAttribute String role) {
+        checkAdmin(role);
         Problem existing = problemService.getProblemById(id);
         if (existing == null) {
             return ApiResponse.error(404, "题目不存在");
         }
-        // 保留原有数据中表单未提交的字段
         if (problem.getTitle() == null) problem.setTitle(existing.getTitle());
         if (problem.getDifficulty() == null) problem.setDifficulty(existing.getDifficulty());
         if (problem.getTags() == null) problem.setTags(existing.getTags());
@@ -78,21 +94,26 @@ public class AdminController {
     }
 
     @DeleteMapping("/problems/{id}")
-    public ApiResponse<Void> deleteProblem(@PathVariable Integer id) {
+    public ApiResponse<Void> deleteProblem(@PathVariable Integer id, @RequestAttribute String role) {
+        checkAdmin(role);
         problemService.deleteProblem(id);
         return ApiResponse.success();
     }
 
     @DeleteMapping("/users/{id}")
-    public ApiResponse<Void> deleteUser(@PathVariable Integer id) {
+    public ApiResponse<Void> deleteUser(@PathVariable Integer id, @RequestAttribute String role) {
+        checkAdmin(role);
         userService.deleteUser(id);
         return ApiResponse.success();
     }
 
     @PutMapping("/users/{id}/role")
-    public ApiResponse<Void> updateUserRole(@PathVariable Integer id, @RequestBody Map<String, String> body) {
-        String role = body.get("role");
-        userService.updateUserRole(id, role);
+    public ApiResponse<Void> updateUserRole(@PathVariable Integer id,
+                                            @RequestBody Map<String, String> body,
+                                            @RequestAttribute String role) {
+        checkAdmin(role);
+        String newRole = body.get("role");
+        userService.updateUserRole(id, newRole);
         return ApiResponse.success();
     }
 }

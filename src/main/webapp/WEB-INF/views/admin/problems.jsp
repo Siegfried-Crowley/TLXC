@@ -44,7 +44,7 @@
     function checkAdmin() {
         var u = getUser();
         if (!u || u.role !== 'admin') {
-            alert('无权访问');
+            toast('无权访问', 'error');
             window.location.href = CONTEXT_PATH + '/home';
         }
     }
@@ -78,9 +78,9 @@
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data.code === 200) showProblemForm(data.data);
-                else alert('加载题目失败');
+                else toast('加载题目失败', 'error');
             })
-            .catch(function(err) { alert('网络错误'); });
+            .catch(function(err) { toast('网络错误', 'error'); });
     }
 
     function showProblemForm(problem) {
@@ -135,14 +135,14 @@
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     if (result.code === 200) {
-                        alert(isEdit ? '保存成功' : '创建成功');
+                        toast(isEdit ? '保存成功' : '创建成功', 'success');
                         closeProblemForm();
                         location.reload();
                     } else {
-                        alert(result.message || '操作失败');
+                        toast(result.message || '操作失败', 'error');
                     }
                 })
-                .catch(function(err) { alert('网络错误'); });
+                .catch(function(err) { toast('网络错误', 'error'); });
         };
     }
 
@@ -184,30 +184,31 @@
                 }
                 tbody.innerHTML = html;
             } else {
-                alert(data.message || '加载失败');
+                toast(data.message || '加载失败', 'error');
             }
         })
         .catch(function(err) {
             console.error(err);
-            alert('网络错误');
+            toast('网络错误', 'error');
         });
 
     function deleteProblem(id) {
-        if (!confirm('确定删除？')) return;
-        fetch(CONTEXT_PATH + '/api/admin/problems/' + id, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data.code === 200) {
-                    alert('删除成功');
-                    location.reload();
-                } else {
-                    alert(data.message || '删除失败');
-                }
+        confirmDialog('确定删除？', function() {
+            fetch(CONTEXT_PATH + '/api/admin/problems/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + getToken() }
             })
-            .catch(function(err) { alert('网络错误'); });
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.code === 200) {
+                        toast('删除成功', 'success');
+                        location.reload();
+                    } else {
+                        toast(data.message || '删除失败', 'error');
+                    }
+                })
+                .catch(function(err) { toast('网络错误', 'error'); });
+        });
     }
 </script>
 </body>

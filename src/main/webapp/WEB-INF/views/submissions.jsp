@@ -19,17 +19,11 @@
     </div>
 </nav>
 <div class="container">
-    <h2 style="color: #22d3ee; margin-bottom: 2rem;">我的提交记录</h2>
-    <div id="submissionList" class="submission-list"><div class="loading">加载中</div></div>
+    <h2 style="color: var(--accent); margin-bottom: 1.5rem;">我的提交记录</h2>
+    <div id="submissionList" class="submission-list"><div class="loading"><span class="spinner"></span></div></div>
+    <div class="pagination" id="pagination"></div>
 </div>
-<script>
-    var CONTEXT_PATH = '${pageContext.request.contextPath}';
-</script>
 <script src="${pageContext.request.contextPath}/js/common.js"></script>
-<script>
-    var contextPath = '${pageContext.request.contextPath}';
-    var apiSubmissions = contextPath + '/api/submissions/my?limit=100';
-</script>
 <script src="${pageContext.request.contextPath}/js/submissions.js"></script>
 </body>
 </html>

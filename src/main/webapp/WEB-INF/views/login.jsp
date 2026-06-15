@@ -20,7 +20,7 @@
                 <label for="password">密码</label>
                 <input type="password" id="password" required placeholder="请输入密码">
             </div>
-            <button type="submit" class="btn-primary">登录</button>
+            <button type="submit" class="btn btn-primary btn-block" style="padding: 0.85rem 1.5rem; font-size: 1.1rem;">登录</button>
         </form>
         <div class="login-footer">
             <p>还没有账号？<a href="${pageContext.request.contextPath}/register">立即注册</a></p>
@@ -51,11 +51,11 @@
                 localStorage.setItem('user', JSON.stringify(user));
                 window.location.href = CONTEXT_PATH + '/home';
             } else {
-                alert(result.message || '登录失败');
+                toast(result.message || '登录失败', 'error');
             }
         } catch (error) {
             console.error('登录错误:', error);
-            alert('网络错误，请稍后重试');
+            toast('网络错误，请稍后重试', 'error');
         }
         return false;
     }

@@ -38,7 +38,7 @@
 <script>
     var contextPath = '${pageContext.request.contextPath}';
     var apiStatsOverview = contextPath + '/api/stats/overview';
-    var apiPointsLogs = contextPath + '/api/points/logs';
+    var apiPointsLogs = contextPath + '/api/stats/points/logs';
 </script>
 <script src="${pageContext.request.contextPath}/js/stats.js"></script>
 </body>

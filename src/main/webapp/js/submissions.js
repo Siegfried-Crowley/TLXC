@@ -1,46 +1,55 @@
+var currentPage = 1;
+
 checkAuth();
 loadSubmissions();
 
-async function loadSubmissions() {
+async function loadSubmissions(page) {
+    if (page) currentPage = page;
     try {
-        var url = apiSubmissions;
-        var response = await fetch(url, {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        });
-        var result = await response.json();
+        var result = await apiGet(CONTEXT_PATH + '/api/submissions/my?page=' + currentPage + '&pageSize=15');
         if (result.code === 200) {
             displaySubmissions(result.data);
         } else {
-            showError('加载提交记录失败: ' + (result.message || ''));
+            showError(result.message || '加载失败');
         }
     } catch (error) {
-        console.error('加载提交记录失败:', error);
+        console.error(error);
         showError('网络错误，请刷新重试');
     }
 }
 
-function displaySubmissions(submissions) {
+function displaySubmissions(data) {
+    var list = data.list || [];
     var listDiv = document.getElementById('submissionList');
-    if (!submissions || submissions.length === 0) {
-        listDiv.innerHTML = '<div class="loading">暂无提交记录</div>';
+    if (!list || list.length === 0) {
+        listDiv.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>暂无提交记录</p></div>';
+        document.getElementById('pagination').innerHTML = '';
         return;
     }
-    listDiv.innerHTML = submissions.map(function(sub) {
-        var statusClass = sub.status === 'accepted' ? 'status-accepted' :
-            sub.status === 'wrong_answer' ? 'status-wrong_answer' : 'status-error';
-        return '<div class="submission-item">' +
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+        var s = list[i];
+        html += '<div class="submission-item">' +
             '<div class="submission-info">' +
-            '<div><strong>题目ID:</strong> ' + (sub.problemId || '-') + '</div>' +
-            '<div><strong>提交时间:</strong> ' + formatDate(sub.createdAt) + '</div>' +
-            '<div><strong>运行时间:</strong> ' + (sub.runtimeMs || 0) + ' ms</div>' +
-            '<div><strong>测试用例:</strong> ' + (sub.passedCases || 0) + ' / ' + (sub.totalCases || 0) + '</div>' +
-            '</div>' +
-            '<div><span class="submission-status ' + statusClass + '">' + getStatusText(sub.status) + '</span></div>' +
+            '<div><strong>题目 #' + s.problemId + '</strong> | ' +
+            '<span class="' + ('status-' + s.status) + '">' + getStatusText(s.status) + '</span></div>' +
+            '<div style="color:var(--text-muted);font-size:0.85rem;margin-top:0.3rem;">' +
+            getLanguageName(s.language || 'python') + ' | ' +
+            (s.runtimeMs || 0) + 'ms | ' +
+            (s.passedCases || 0) + '/' + (s.totalCases || 0) + ' 通过 | ' +
+            timeAgo(s.createdAt) +
+            '</div></div>' +
+            '<div><span style="color:' + (s.scoreDelta > 0 ? 'var(--green)' : 'var(--text-muted)') + ';font-weight:bold;">' +
+            (s.scoreDelta > 0 ? '+' : '') + (s.scoreDelta || 0) + '</span></div>' +
             '</div>';
-    }).join('');
+    }
+    listDiv.innerHTML = html;
+
+    renderPagination(document.getElementById('pagination'), data.totalPages, data.page, function(p) {
+        loadSubmissions(p);
+    });
 }
 
 function showError(msg) {
-    var listDiv = document.getElementById('submissionList');
-    if (listDiv) listDiv.innerHTML = '<div style="color:#ef4444;padding:2rem;text-align:center;">' + msg + '</div>';
+    document.getElementById('submissionList').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><p>' + escapeHtml(msg) + '</p></div>';
 }

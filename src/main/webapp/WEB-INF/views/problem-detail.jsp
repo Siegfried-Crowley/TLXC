@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>题目详情 - 题炼星程</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 <nav class="navbar">
@@ -18,97 +19,107 @@
     </div>
 </nav>
 <div class="container">
-    <div id="problemDetail" class="problem-detail">加载中...</div>
+    <div class="skeleton" style="height: 24px; width: 60%; margin-bottom: 1rem;"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div id="problemDetail" class="problem-detail" style="display:none;"></div>
     <div class="action-buttons" style="margin-top: 2rem;">
-        <a id="submitBtn" href="#" class="btn-primary">提交代码</a>
-        <a href="${pageContext.request.contextPath}/problems" class="btn-secondary">返回题库</a>
+        <a id="submitBtn" href="#" class="btn btn-primary">提交代码</a>
+        <a href="${pageContext.request.contextPath}/problems" class="btn btn-secondary">返回题库</a>
     </div>
 </div>
+<script src="${pageContext.request.contextPath}/js/common.js"></script>
 <script>
-    (function() {
-        // 获取上下文路径
-        var path = window.location.pathname;
-        var parts = path.split('/');
-        var CONTEXT_PATH = (parts.length >= 2 && parts[1]) ? '/' + parts[1] : '';
+(function() {
+    var CONTEXT_PATH = '${pageContext.request.contextPath}';
+    var problemId = new URLSearchParams(window.location.search).get('id');
+    if (!problemId) {
+        document.getElementById('problemDetail').style.display = 'block';
+        document.getElementById('problemDetail').innerHTML = '错误：缺少题目ID';
+        return;
+    }
 
-        function getToken() {
-            return localStorage.getItem('token');
-        }
+    fetch(CONTEXT_PATH + '/api/problems/' + problemId, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(result) {
+        document.querySelectorAll('.skeleton').forEach(function(el) { el.remove(); });
+        var el = document.getElementById('problemDetail');
+        el.style.display = 'block';
 
-        // 检查登录
-        if (!getToken()) {
-            window.location.href = CONTEXT_PATH + '/login';
-            return;
-        }
+        if (result.code === 200 && result.data) {
+            var p = result.data;
 
-        var problemId = new URLSearchParams(window.location.search).get('id');
-        if (!problemId) {
-            document.getElementById('problemDetail').innerHTML = '错误：缺少题目ID';
-            return;
-        }
+            // Render tags
+            var tagsHtml = '';
+            if (p.tagList && p.tagList.length > 0) {
+                tagsHtml = p.tagList.map(function(t) {
+                    return '<span class="tag" style="border-color:' + (t.color || '#22d3ee') + ';color:' + (t.color || '#22d3ee') + '">' + escapeHtml(t.name) + '</span>';
+                }).join('');
+            } else if (p.tags) {
+                try {
+                    var parsed = JSON.parse(p.tags);
+                    if (Array.isArray(parsed)) tagsHtml = parsed.map(function(t) { return '<span class="tag" style="border-color:#22d3ee;color:#22d3ee">' + escapeHtml(t) + '</span>'; }).join('');
+                } catch(e) { tagsHtml = escapeHtml(p.tags); }
+            }
 
-        fetch(CONTEXT_PATH + '/api/problems/' + problemId, {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        })
-            .then(function(res) {
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return res.json();
-            })
-            .then(function(result) {
-                if (result.code === 200 && result.data) {
-                    var p = result.data;
-                    // 简单转义HTML特殊字符
-                    function escape(s) {
-                        if (s == null) return '';
-                        return String(s).replace(/[&<>]/g, function(m) {
-                            if (m === '&') return '&amp;';
-                            if (m === '<') return '&lt;';
-                            if (m === '>') return '&gt;';
-                            return m;
-                        });
-                    }
-                    // 组装HTML
-                    var html = '<h1>' + escape(p.title) + '</h1>' +
-                        '<div class="problem-meta">' +
-                        '<span class="badge badge-' + p.difficulty + '">' + (p.difficulty === 'easy' ? '简单' : (p.difficulty === 'medium' ? '中等' : '困难')) + '</span>' +
-                        '<span>标签: ' + (escape(p.tags) || '无') + '</span>' +
-                        '</div>' +
-                        '<div class="problem-description">' +
-                        '<h3>题目描述</h3><p>' + (escape(p.description) || '暂无描述') + '</p>';
-                    if (p.inputDescription) html += '<h3>输入格式</h3><p>' + escape(p.inputDescription) + '</p>';
-                    if (p.outputDescription) html += '<h3>输出格式</h3><p>' + escape(p.outputDescription) + '</p>';
-                    // 示例
-                    if (p.examples) {
-                        try {
-                            var exArr = JSON.parse(p.examples);
-                            if (Array.isArray(exArr)) {
-                                for (var i = 0; i < exArr.length; i++) {
-                                    html += '<div class="code-block"><strong>示例 ' + (i+1) + ':</strong><br>' +
-                                        '输入: ' + escape(JSON.stringify(exArr[i].input)) + '<br>' +
-                                        '输出: ' + escape(JSON.stringify(exArr[i].output)) + '</div>';
-                                }
-                            } else {
-                                html += '<div class="code-block">' + escape(p.examples) + '</div>';
-                            }
-                        } catch(e) {
-                            html += '<div class="code-block">' + escape(p.examples) + '</div>';
+            var html = '<h1>' + escapeHtml(p.title) + '</h1>' +
+                '<div class="problem-meta">' +
+                '<span class="badge badge-' + p.difficulty + '">' + getDifficultyText(p.difficulty) + '</span>' +
+                '<span>时间限制: ' + (p.timeLimitMs || 1000) + 'ms</span>' +
+                '<span>内存限制: ' + (p.memoryLimitMb || 128) + 'MB</span>' +
+                (tagsHtml ? '<span>' + tagsHtml + '</span>' : '') +
+                '</div>' +
+                '<div class="problem-description">' +
+                '<h3>📖 题目描述</h3>' + marked.parse(escapeHtml(p.description || '暂无描述'));
+
+            if (p.inputDescription) html += '<h3>📥 输入格式</h3>' + marked.parse(escapeHtml(p.inputDescription));
+            if (p.outputDescription) html += '<h3>📤 输出格式</h3>' + marked.parse(escapeHtml(p.outputDescription));
+
+            // Examples
+            if (p.examples) {
+                html += '<h3>📝 示例</h3>';
+                try {
+                    var exArr = JSON.parse(p.examples);
+                    if (Array.isArray(exArr)) {
+                        for (var i = 0; i < exArr.length; i++) {
+                            html += '<div class="code-block"><strong>示例 ' + (i+1) + ':</strong><br>' +
+                                '<span style="color:#8aa1bd">输入:</span> ' + escapeHtml(JSON.stringify(exArr[i].input, null, 2)) + '<br>' +
+                                '<span style="color:#8aa1bd">输出:</span> ' + escapeHtml(JSON.stringify(exArr[i].output, null, 2)) + '</div>';
                         }
                     }
-                    if (p.hint) html += '<h3>提示</h3><p>' + escape(p.hint) + '</p>';
-                    if (p.constraints) html += '<h3>约束条件</h3><p>' + escape(p.constraints) + '</p>';
-                    html += '</div>';
-                    document.getElementById('problemDetail').innerHTML = html;
-                    document.getElementById('submitBtn').href = CONTEXT_PATH + '/submit?id=' + p.id;
-                } else {
-                    document.getElementById('problemDetail').innerHTML = '加载失败：' + (result.message || '未知错误');
+                } catch(e) {
+                    html += '<div class="code-block">' + escapeHtml(p.examples) + '</div>';
                 }
-            })
-            .catch(function(err) {
-                console.error(err);
-                alert('错误详情：' + err.message);
-                document.getElementById('problemDetail').innerHTML = '网络错误，请稍后重试';
+            }
+
+            if (p.hint) html += '<h3>💡 提示</h3>' + marked.parse(escapeHtml(p.hint));
+            if (p.constraints) html += '<h3>🔒 约束条件</h3>' + marked.parse(escapeHtml(p.constraints));
+            html += '</div>';
+
+            // Language support
+            var langs = ['python', 'java', 'cpp', 'javascript'];
+            html += '<div style="margin-top: 1rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">' +
+                '<span style="color:var(--text-secondary)">可用语言:</span>';
+            langs.forEach(function(l) {
+                html += '<span class="badge badge-info">' + getLanguageName(l) + '</span>';
             });
-    })();
+            html += '</div>';
+
+            el.innerHTML = html;
+            document.getElementById('submitBtn').href = CONTEXT_PATH + '/submit?id=' + p.id;
+        } else {
+            el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><p>' + (result.message || '加载失败') + '</p></div>';
+        }
+    })
+    .catch(function(err) {
+        console.error(err);
+        document.querySelectorAll('.skeleton').forEach(function(el) { el.remove(); });
+        var el = document.getElementById('problemDetail');
+        el.style.display = 'block';
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><p>网络错误，请刷新重试</p></div>';
+    });
+})();
 </script>
 </body>
 </html>

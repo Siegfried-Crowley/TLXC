@@ -20,11 +20,11 @@ async function handleLogin(event) {
             localStorage.setItem('user', JSON.stringify(result.data.user));
             window.location.href = contextPath + '/home';
         } else {
-            alert(result.message || '登录失败');
+            toast(result.message || '登录失败', 'error');
         }
     } catch (error) {
         console.error('登录错误:', error);
-        alert('网络错误，请稍后重试');
+        toast('网络错误，请稍后重试', 'error');
     }
 
     return false;

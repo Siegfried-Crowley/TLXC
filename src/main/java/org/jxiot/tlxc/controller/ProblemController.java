@@ -2,12 +2,14 @@ package org.jxiot.tlxc.controller;
 
 import org.jxiot.tlxc.dto.ApiResponse;
 import org.jxiot.tlxc.entity.Problem;
+import org.jxiot.tlxc.entity.Tag;
 import org.jxiot.tlxc.entity.TestCase;
 import org.jxiot.tlxc.service.ProblemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/problems")
@@ -18,11 +20,19 @@ public class ProblemController {
     private ProblemService problemService;
 
     @GetMapping
-    public ApiResponse<List<Problem>> getProblems(
+    public ApiResponse<Map<String, Object>> getProblems(
             @RequestParam(required = false) String difficulty,
-            @RequestParam(required = false) String status) {
-        List<Problem> problems = problemService.getProblemList(difficulty, status, true);
-        return ApiResponse.success(problems);
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        Map<String, Object> result = problemService.getProblemList(difficulty, status, true, keyword, page, pageSize);
+        return ApiResponse.success(result);
+    }
+
+    @GetMapping("/tags")
+    public ApiResponse<List<Tag>> getAllTags() {
+        return ApiResponse.success(problemService.getAllTags());
     }
 
     @GetMapping("/{id}")

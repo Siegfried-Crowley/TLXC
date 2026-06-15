@@ -36,8 +36,8 @@
     <div class="quick-actions">
         <h2>快速开始</h2>
         <div class="action-buttons">
-            <a href="${pageContext.request.contextPath}/problems" class="btn-primary">浏览题库</a>
-            <a href="${pageContext.request.contextPath}/contest" class="btn-secondary">参加每日一题</a>
+            <a href="${pageContext.request.contextPath}/problems" class="btn btn-primary" style="padding: 1rem 2.5rem; font-size: 1.1rem;">浏览题库</a>
+            <a href="${pageContext.request.contextPath}/contest" class="btn btn-secondary" style="padding: 1rem 2.5rem; font-size: 1.1rem;">参加每日一题</a>
         </div>
     </div>
 </div>

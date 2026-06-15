@@ -17,14 +17,14 @@ async function handleRegister(event) {
         const result = await response.json();
 
         if (result.code === 200) {
-            alert('注册成功！请登录');
+            toast('注册成功！请登录', 'success');
             window.location.href = contextPath + '/login';
         } else {
-            alert(result.message || '注册失败');
+            toast(result.message || '注册失败', 'error');
         }
     } catch (error) {
         console.error('注册错误:', error);
-        alert('网络错误，请稍后重试');
+        toast('网络错误，请稍后重试', 'error');
     }
 
     return false;

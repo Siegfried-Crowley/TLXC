@@ -50,6 +50,24 @@ CREATE TABLE IF NOT EXISTS `problem` (
     FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 标签表
+CREATE TABLE IF NOT EXISTS `tag` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(50) NOT NULL UNIQUE,
+    `color` VARCHAR(20) DEFAULT '#22d3ee',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_name (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 题目-标签关联表
+CREATE TABLE IF NOT EXISTS `problem_tag` (
+    `problem_id` INT NOT NULL,
+    `tag_id` INT NOT NULL,
+    PRIMARY KEY (`problem_id`, `tag_id`),
+    FOREIGN KEY (`problem_id`) REFERENCES `problem`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tag_id`) REFERENCES `tag`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 测试用例表
 CREATE TABLE IF NOT EXISTS `test_case` (
                                            `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,13 +82,14 @@ CREATE TABLE IF NOT EXISTS `test_case` (
     FOREIGN KEY (`problem_id`) REFERENCES `problem`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 提交记录表（已修复：移除 error_message 的 DEFAULT）
+-- 提交记录表
 CREATE TABLE IF NOT EXISTS `submission` (
                                             `id` INT AUTO_INCREMENT PRIMARY KEY,
                                             `user_id` INT NOT NULL,
                                             `problem_id` INT NOT NULL,
                                             `code` TEXT NOT NULL,
-                                            `status` VARCHAR(50) NOT NULL,
+                                            `language` VARCHAR(20) DEFAULT 'python',
+    `status` VARCHAR(50) NOT NULL,
     `runtime_ms` INT DEFAULT 0,
     `passed_cases` INT DEFAULT 0,
     `total_cases` INT DEFAULT 0,

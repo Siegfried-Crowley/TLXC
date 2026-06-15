@@ -2,6 +2,7 @@ package org.jxiot.tlxc.entity;
 
 import lombok.Data;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class Problem {
@@ -24,4 +25,16 @@ public class Problem {
     private Boolean isActive;
     private Date createdAt;
     private Date updatedAt;
+
+    // Transient fields for tag system
+    private List<Tag> tagList;
+    private List<Integer> tagIds;
+
+    /**
+     * @return supported languages for this problem, comma-separated, default "python"
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getAllowedLanguages() {
+        return "python,java,cpp,javascript";
+    }
 }

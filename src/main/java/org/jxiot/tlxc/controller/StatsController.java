@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/stats")
@@ -31,7 +32,8 @@ public class StatsController {
 
     @GetMapping("/overview")
     public ApiResponse<Map<String, Object>> getOverview(@RequestAttribute Integer userId) {
-        List<Submission> submissions = submissionService.getUserSubmissions(userId, 1000);
+        Map<String, Object> subResult = submissionService.getUserSubmissions(userId, 1, 10000);
+        List<Submission> submissions = (List<Submission>) subResult.get("list");
         List<PointLog> pointLogs = pointsService.getUserPointLogs(userId);
 
         Map<String, Object> stats = new HashMap<>();

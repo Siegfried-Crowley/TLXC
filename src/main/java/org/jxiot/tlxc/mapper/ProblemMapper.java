@@ -15,11 +15,28 @@ public interface ProblemMapper {
             "<if test='difficulty != null'> AND difficulty = #{difficulty}</if>" +
             "<if test='status != null'> AND status = #{status}</if>" +
             "<if test='isActive != null'> AND is_active = #{isActive}</if>" +
+            "<if test='keyword != null'> AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))</if>" +
             " ORDER BY id ASC" +
+            " LIMIT #{pageSize} OFFSET #{offset}" +
             "</script>")
     List<Problem> findByCondition(@Param("difficulty") String difficulty,
                                   @Param("status") String status,
-                                  @Param("isActive") Boolean isActive);
+                                  @Param("isActive") Boolean isActive,
+                                  @Param("keyword") String keyword,
+                                  @Param("offset") int offset,
+                                  @Param("pageSize") int pageSize);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM problem WHERE 1=1" +
+            "<if test='difficulty != null'> AND difficulty = #{difficulty}</if>" +
+            "<if test='status != null'> AND status = #{status}</if>" +
+            "<if test='isActive != null'> AND is_active = #{isActive}</if>" +
+            "<if test='keyword != null'> AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))</if>" +
+            "</script>")
+    long countByCondition(@Param("difficulty") String difficulty,
+                          @Param("status") String status,
+                          @Param("isActive") Boolean isActive,
+                          @Param("keyword") String keyword);
 
     @Insert("INSERT INTO problem(title, difficulty, tags, description, input_description, output_description, " +
             "examples, hint, constraints, source, status, time_limit_ms, memory_limit_mb, created_by, starter_code, is_active, created_at, updated_at) " +
