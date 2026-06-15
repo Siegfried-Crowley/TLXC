@@ -3,16 +3,12 @@ package org.jxiot.tlxc.controller;
 import org.jxiot.tlxc.dto.ApiResponse;
 import org.jxiot.tlxc.entity.Problem;
 import org.jxiot.tlxc.entity.Submission;
+import org.jxiot.tlxc.service.DeepSeekService;
 import org.jxiot.tlxc.service.ProblemService;
 import org.jxiot.tlxc.service.SubmissionService;
-import org.jxiot.tlxc.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,35 +19,17 @@ import java.util.Map;
 public class SubmissionController {
 
     @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
     private ProblemService problemService;
 
     @Autowired
     private SubmissionService submissionService;
 
-    @Value("${deepseek.api.key}")
-    private String apiKey;
+    @Autowired
+    private DeepSeekService deepSeekService;
 
     @PostMapping
     public ApiResponse<Map<String, Object>> submit(@RequestBody Map<String, Object> payload,
-                                                   @RequestAttribute(required = false) Integer userId,
-                                                   HttpServletRequest request) {
-        if (userId == null) {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                try {
-                    userId = jwtUtil.getUserIdFromToken(token);
-                } catch (Exception e) {
-                    return ApiResponse.error(401, "无效的 token");
-                }
-            }
-        }
-        if (userId == null) {
-            return ApiResponse.error(401, "未登录或用户信息缺失");
-        }
+                                                   @RequestAttribute Integer userId) {
 
         Integer problemId = (Integer) payload.get("problemId");
         String code = (String) payload.get("code");
@@ -83,7 +61,7 @@ public class SubmissionController {
                 + (submission.getErrorMessage() != null ? "错误信息：" + submission.getErrorMessage() + "\n" : "")
                 + "\n请根据以上评测结果和代码内容，给出简要的分析和建议。";
 
-        String analysis = callDeepSeek(prompt);
+        String analysis = deepSeekService.callDeepSeek(prompt);
 
         Map<String, Object> result = new HashMap<>();
         result.put("submissionId", submission.getId());
@@ -103,55 +81,9 @@ public class SubmissionController {
 
     @GetMapping("/my")
     public ApiResponse<List<Submission>> getMySubmissions(
-            @RequestAttribute(required = false) Integer userId,
-            @RequestParam(defaultValue = "100") int limit,
-            HttpServletRequest request) {
-        if (userId == null) {
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                try {
-                    userId = jwtUtil.getUserIdFromToken(authHeader.substring(7));
-                } catch (Exception e) {
-                    return ApiResponse.error(401, "无效的 token");
-                }
-            }
-        }
-        if (userId == null) {
-            return ApiResponse.error(401, "未登录或用户信息缺失");
-        }
+            @RequestAttribute Integer userId,
+            @RequestParam(defaultValue = "100") int limit) {
         List<Submission> submissions = submissionService.getUserSubmissions(userId, limit);
         return ApiResponse.success(submissions);
-    }
-
-    private String callDeepSeek(String prompt) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + apiKey);
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "deepseek-chat");
-        requestBody.put("messages", List.of(Map.of("role", "user", "content", prompt)));
-        requestBody.put("stream", false);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        try {
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    "https://api.deepseek.com/v1/chat/completions",
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-            );
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
-                if (choices != null && !choices.isEmpty()) {
-                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-                    return (String) message.get("content");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }

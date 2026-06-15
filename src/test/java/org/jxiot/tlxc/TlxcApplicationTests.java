@@ -1,9 +1,9 @@
 package org.jxiot.tlxc;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Copy;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@org.jxiot.tlxc.SpringBootTest
+@SpringBootTest
 class TlxcApplicationTests {
 
     @Test

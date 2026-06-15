@@ -23,8 +23,19 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(User user);
 
-    @Update("UPDATE user SET nickname=#{nickname}, total_points=#{totalPoints}, streak_days=#{streakDays}, " +
-            "last_pass_date=#{lastPassDate}, last_login_at=#{lastLoginAt} WHERE id=#{id}")
+    @Update("<script>" +
+            "UPDATE user SET " +
+            "<if test='nickname != null'>nickname=#{nickname},</if>" +
+            "<if test='totalPoints != null'>total_points=#{totalPoints},</if>" +
+            "<if test='streakDays != null'>streak_days=#{streakDays},</if>" +
+            "<if test='lastPassDate != null'>last_pass_date=#{lastPassDate},</if>" +
+            "<if test='lastLoginAt != null'>last_login_at=#{lastLoginAt},</if>" +
+            "<if test='role != null'>role=#{role},</if>" +
+            "<if test='status != null'>status=#{status},</if>" +
+            // Remove trailing comma
+            "id=#{id} " +
+            "WHERE id=#{id}" +
+            "</script>")
     int update(User user);
 
     @Select("SELECT * FROM user ORDER BY total_points DESC LIMIT #{limit}")
