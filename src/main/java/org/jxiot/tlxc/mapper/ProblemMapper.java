@@ -36,6 +36,11 @@ public interface ProblemMapper {
             "WHERE id=#{id}")
     int update(Problem problem);
 
+    @Update("UPDATE problem SET title=#{title}, difficulty=#{difficulty}, tags=#{tags}, description=#{description}, " +
+            "input_description=#{inputDescription}, output_description=#{outputDescription}, examples=#{examples}, " +
+            "starter_code=#{starterCode}, status=#{status}, is_active=TRUE, updated_at=NOW() WHERE id=#{id}")
+    int updateAdmin(Problem problem);
+
     @Delete("DELETE FROM problem WHERE id = #{id}")
     int deleteById(Integer id);
 

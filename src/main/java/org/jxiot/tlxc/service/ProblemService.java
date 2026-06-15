@@ -49,6 +49,11 @@ public class ProblemService {
         problemMapper.update(problem);
     }
 
+    public void updateProblemAdmin(Problem problem) {
+        problem.setUpdatedAt(new Date());
+        problemMapper.updateAdmin(problem);
+    }
+
     public void deleteProblem(Integer id) {
         problemMapper.deleteById(id);
         testCaseMapper.deleteByProblemId(id);

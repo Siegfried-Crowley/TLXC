@@ -58,8 +58,22 @@ public class AdminController {
 
     @PutMapping("/problems/{id}")
     public ApiResponse<Void> updateProblem(@PathVariable Integer id, @RequestBody Problem problem) {
+        Problem existing = problemService.getProblemById(id);
+        if (existing == null) {
+            return ApiResponse.error(404, "题目不存在");
+        }
+        // 保留原有数据中表单未提交的字段
+        if (problem.getTitle() == null) problem.setTitle(existing.getTitle());
+        if (problem.getDifficulty() == null) problem.setDifficulty(existing.getDifficulty());
+        if (problem.getTags() == null) problem.setTags(existing.getTags());
+        if (problem.getDescription() == null) problem.setDescription(existing.getDescription());
+        if (problem.getInputDescription() == null) problem.setInputDescription(existing.getInputDescription());
+        if (problem.getOutputDescription() == null) problem.setOutputDescription(existing.getOutputDescription());
+        if (problem.getExamples() == null) problem.setExamples(existing.getExamples());
+        if (problem.getStarterCode() == null) problem.setStarterCode(existing.getStarterCode());
+        if (problem.getStatus() == null) problem.setStatus(existing.getStatus());
         problem.setId(id);
-        problemService.updateProblem(problem);
+        problemService.updateProblemAdmin(problem);
         return ApiResponse.success();
     }
 
