@@ -8,16 +8,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-brand">题炼星程</div>
-    <div class="nav-links">
-        <a href="${pageContext.request.contextPath}/home">首页</a>
-        <a href="${pageContext.request.contextPath}/problems">题库</a>
-        <a href="${pageContext.request.contextPath}/rankings" class="active">排行榜</a>
-        <a href="${pageContext.request.contextPath}/profile">个人中心</a>
-        <a href="/algorithm_training_system_war/login" onclick="localStorage.removeItem('token');localStorage.removeItem('user');">退出</a>
-    </div>
-</nav>
+<jsp:include page="/WEB-INF/views/inc/navbar.jsp">
+    <jsp:param name="activePage" value="rankings"/>
+</jsp:include>
 <div class="container">
     <h2 style="color: #22d3ee; margin-bottom: 2rem;">积分排行榜</h2>
     <table class="problem-table">

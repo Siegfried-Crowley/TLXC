@@ -9,16 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css">
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-brand">题炼星程</div>
-    <div class="nav-links">
-        <a href="${pageContext.request.contextPath}/home">首页</a>
-        <a href="${pageContext.request.contextPath}/problems">题库</a>
-        <a href="${pageContext.request.contextPath}/submissions">提交记录</a>
-        <a href="${pageContext.request.contextPath}/profile">个人中心</a>
-        <a href="/algorithm_training_system_war/login" onclick="localStorage.removeItem('token');localStorage.removeItem('user');">退出</a>
-    </div>
-</nav>
+<jsp:include page="/WEB-INF/views/inc/navbar.jsp">
+    <jsp:param name="activePage" value="submissions"/>
+</jsp:include>
 <div class="container">
     <div class="problem-detail" id="problemInfo"><div class="loading">加载题目信息...</div></div>
     <div class="code-editor-container">

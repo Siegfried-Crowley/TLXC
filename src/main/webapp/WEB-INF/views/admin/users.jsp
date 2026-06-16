@@ -7,16 +7,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-brand">题炼星程 - 管理后台</div>
-    <div class="nav-links">
-        <a href="${pageContext.request.contextPath}/admin/dashboard">数据看板</a>
-        <a href="${pageContext.request.contextPath}/admin/problems">题目管理</a>
-        <a href="${pageContext.request.contextPath}/admin/users" class="active">用户管理</a>
-        <a href="${pageContext.request.contextPath}/home">返回前台</a>
-        <a href="#" onclick="logout()">退出</a>
-    </div>
-</nav>
+<jsp:include page="/WEB-INF/views/inc/admin-navbar.jsp">
+    <jsp:param name="activePage" value="admin-users"/>
+</jsp:include>
 <div class="container">
     <h2 style="color: #22d3ee;">用户管理</h2>
     <table class="problem-table">

@@ -8,20 +8,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-brand">题炼星程</div>
-    <div class="nav-links">
-        <a href="${pageContext.request.contextPath}/home">首页</a>
-        <a href="${pageContext.request.contextPath}/problems" class="active">题库</a>
-        <a href="${pageContext.request.contextPath}/submissions">提交记录</a>
-        <a href="${pageContext.request.contextPath}/wrongbook">错题本</a>
-        <a href="${pageContext.request.contextPath}/rankings">排行榜</a>
-        <a href="${pageContext.request.contextPath}/stats">学习统计</a>
-        <a href="${pageContext.request.contextPath}/ai">AI助手</a>
-        <a href="${pageContext.request.contextPath}/profile">个人中心</a>
-        <a href="#" onclick="logout()">退出</a>
-    </div>
-</nav>
+<jsp:include page="/WEB-INF/views/inc/navbar.jsp">
+    <jsp:param name="activePage" value="problems"/>
+</jsp:include>
 
 <div class="container">
     <div class="filter-bar">

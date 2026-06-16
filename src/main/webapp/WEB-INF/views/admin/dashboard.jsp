@@ -8,16 +8,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-brand">题炼星程 - 管理后台</div>
-    <div class="nav-links">
-        <a href="${pageContext.request.contextPath}/admin/dashboard" class="active">数据看板</a>
-        <a href="${pageContext.request.contextPath}/admin/problems">题目管理</a>
-        <a href="${pageContext.request.contextPath}/admin/users">用户管理</a>
-        <a href="${pageContext.request.contextPath}/home">返回前台</a>
-        <a href="/algorithm_training_system_war/login" onclick="localStorage.removeItem('token');localStorage.removeItem('user');">退出</a>
-    </div>
-</nav>
+<jsp:include page="/WEB-INF/views/inc/admin-navbar.jsp">
+    <jsp:param name="activePage" value="dashboard"/>
+</jsp:include>
 
 <div class="container">
     <h2 style="color: #22d3ee; margin-bottom: 2rem;">系统数据概览</h2>
