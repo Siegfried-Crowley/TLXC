@@ -21,39 +21,9 @@
         </tbody>
     </table>
 </div>
+<script src="${pageContext.request.contextPath}/js/common.js"></script>
 <script>
     var CONTEXT_PATH = '${pageContext.request.contextPath}';
-
-    function getUser() {
-        var s = localStorage.getItem('user');
-        try { return s ? JSON.parse(s) : null; } catch(e) { return null; }
-    }
-    function getToken() { return localStorage.getItem('token'); }
-    function checkAuth() { if (!getToken() || !getUser()) window.location.href = CONTEXT_PATH + '/login'; }
-    function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = CONTEXT_PATH + '/login'; }
-    function checkAdmin() {
-        var u = getUser();
-        if (!u || u.role !== 'admin') {
-            toast('无权访问', 'error');
-            window.location.href = CONTEXT_PATH + '/home';
-        }
-    }
-    function formatDate(d) {
-        if (!d) return '-';
-        var date = new Date(d);
-        return isNaN(date.getTime()) ? d : date.toLocaleString('zh-CN');
-    }
-    // 修复后的 escapeHtml：处理非字符串参数
-    function escapeHtml(str) {
-        if (str == null) return '';
-        str = String(str);
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
 
     checkAuth();
     checkAdmin();

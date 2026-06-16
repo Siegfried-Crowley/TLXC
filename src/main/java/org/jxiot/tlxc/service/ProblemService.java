@@ -8,6 +8,7 @@ import org.jxiot.tlxc.mapper.TagMapper;
 import org.jxiot.tlxc.mapper.TestCaseMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -65,6 +66,7 @@ public class ProblemService {
         return tagMapper.findAll();
     }
 
+    @Transactional
     public Problem createProblem(Problem problem) {
         problem.setCreatedAt(new Date());
         problem.setUpdatedAt(new Date());
@@ -74,12 +76,14 @@ public class ProblemService {
         return problem;
     }
 
+    @Transactional
     public void updateProblem(Problem problem) {
         problem.setUpdatedAt(new Date());
         problemMapper.update(problem);
         saveTags(problem);
     }
 
+    @Transactional
     public void updateProblemAdmin(Problem problem) {
         problem.setUpdatedAt(new Date());
         problemMapper.updateAdmin(problem);
@@ -95,6 +99,7 @@ public class ProblemService {
         }
     }
 
+    @Transactional
     public void deleteProblem(Integer id) {
         tagMapper.removeAllProblemTags(id);
         problemMapper.deleteById(id);

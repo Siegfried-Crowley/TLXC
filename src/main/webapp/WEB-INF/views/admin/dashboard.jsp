@@ -43,49 +43,8 @@
     </div>
 </div>
 
+<script src="${pageContext.request.contextPath}/js/common.js"></script>
 <script>
-    // ==================== 公共函数定义（不依赖 common.js） ====================
-    function getUser() {
-        const userStr = localStorage.getItem('user');
-        if (!userStr) return null;
-        try {
-            return JSON.parse(userStr);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function getToken() {
-        return localStorage.getItem('token');
-    }
-
-    function checkAuth() {
-        if (!getToken() || !getUser()) {
-            window.location.href = '${pageContext.request.contextPath}/login';
-        }
-    }
-
-    function showMessage(msg, type) {
-        toast(msg, type || 'info');  // 使用 toast 通知
-    }
-
-    function logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '${pageContext.request.contextPath}/login';
-    }
-
-    function checkAdmin() {
-        const user = getUser();
-        if (!user || user.role !== 'admin') {
-            showMessage('无权访问管理后台', 'error');
-            setTimeout(() => {
-                window.location.href = '${pageContext.request.contextPath}/home';
-            }, 2000);
-        }
-    }
-
-    // ==================== 页面业务逻辑 ====================
     checkAuth();
     checkAdmin();
     loadDashboard();
@@ -106,7 +65,7 @@
             }
         } catch (error) {
             console.error('加载失败:', error);
-            showMessage('加载数据失败', 'error');
+            toast('加载数据失败', 'error');
         }
     }
 </script>

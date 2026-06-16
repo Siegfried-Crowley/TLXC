@@ -48,21 +48,35 @@ public class ProblemController {
     }
 
     @PostMapping
-    public ApiResponse<Problem> createProblem(@RequestBody Problem problem, @RequestAttribute Integer userId) {
+    public ApiResponse<Problem> createProblem(@RequestBody Problem problem,
+                                               @RequestAttribute Integer userId,
+                                               @RequestAttribute String role) {
+        if (!"admin".equals(role)) {
+            return ApiResponse.error(403, "仅管理员可创建题目");
+        }
         problem.setCreatedBy(userId);
         Problem created = problemService.createProblem(problem);
         return ApiResponse.success(created);
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Void> updateProblem(@PathVariable Integer id, @RequestBody Problem problem) {
+    public ApiResponse<Void> updateProblem(@PathVariable Integer id,
+                                           @RequestBody Problem problem,
+                                           @RequestAttribute String role) {
+        if (!"admin".equals(role)) {
+            return ApiResponse.error(403, "仅管理员可修改题目");
+        }
         problem.setId(id);
         problemService.updateProblem(problem);
         return ApiResponse.success();
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteProblem(@PathVariable Integer id) {
+    public ApiResponse<Void> deleteProblem(@PathVariable Integer id,
+                                           @RequestAttribute String role) {
+        if (!"admin".equals(role)) {
+            return ApiResponse.error(403, "仅管理员可删除题目");
+        }
         problemService.deleteProblem(id);
         return ApiResponse.success();
     }

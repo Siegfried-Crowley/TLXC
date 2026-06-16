@@ -156,6 +156,10 @@
         return html;
     }
 
+    function showMessage(msg, type) {
+        toast(msg, type || 'info');
+    }
+
     async function joinContest() {
         try {
             var res = await fetch(apiJoin, {

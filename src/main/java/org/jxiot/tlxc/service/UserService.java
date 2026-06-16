@@ -4,6 +4,8 @@ import org.jxiot.tlxc.entity.User;
 import org.jxiot.tlxc.mapper.UserMapper;
 import org.jxiot.tlxc.util.JwtUtil;
 import org.jxiot.tlxc.util.PasswordUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import java.util.Map;
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     @Autowired
     private UserMapper userMapper;
 
@@ -25,11 +29,8 @@ public class UserService {
 
     public Map<String, Object> login(String username, String password) {
         User user = userMapper.findByUsername(username);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
-        }
-        if (!PasswordUtil.verify(password, user.getHashedPassword())) {
-            throw new RuntimeException("密码错误");
+        if (user == null || !PasswordUtil.verify(password, user.getHashedPassword())) {
+            throw new RuntimeException("用户名或密码错误");
         }
         user.setLastLoginAt(new Date());
         userMapper.update(user);
@@ -44,7 +45,7 @@ public class UserService {
     public User register(String username, String password, String nickname) {
         User existing = userMapper.findByUsername(username);
         if (existing != null) {
-            throw new RuntimeException("用户名已存在");
+            throw new RuntimeException("用户名已被使用");
         }
         User user = new User();
         user.setUsername(username);
@@ -97,11 +98,10 @@ public class UserService {
     public void initAdmin() {
         try {
             User admin = userMapper.findByUsername("admin");
-            String correctHash = PasswordUtil.encode("admin");
             if (admin == null) {
                 admin = new User();
                 admin.setUsername("admin");
-                admin.setHashedPassword(correctHash);
+                admin.setHashedPassword(PasswordUtil.encode("admin"));
                 admin.setNickname("系统管理员");
                 admin.setRole("admin");
                 admin.setStatus("active");
@@ -109,18 +109,9 @@ public class UserService {
                 admin.setStreakDays(0);
                 admin.setLastLoginAt(new Date());
                 userMapper.insert(admin);
-                System.out.println("创建管理员账号：admin / admin，密码哈希：" + correctHash);
-            } else {
-                // 关键：如果密码不匹配，更新数据库
-                if (!PasswordUtil.verify("admin", admin.getHashedPassword())) {
-                    admin.setHashedPassword(correctHash);
-                    userMapper.update(admin);
-                    System.out.println("已更新 admin 密码哈希为：" + correctHash);
-                } else {
-                    System.out.println("admin 密码哈希正确，无需更新");
-                }
+                log.info("已创建默认管理员账号 (admin)");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("初始化管理员账号失败", e);
         }
     }}

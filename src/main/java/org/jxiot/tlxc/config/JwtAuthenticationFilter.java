@@ -24,7 +24,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String[] PUBLIC_PATHS = {
             "/api/auth/**",
             "/api/problems/**",
-            "/api/contests/**",
             "/api/rankings/**",
             "/css/**",
             "/js/**",
@@ -47,12 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
 
-        // Check public API paths
-        for (String publicPath : PUBLIC_PATHS) {
-            if (pathMatcher.match(publicPath, path)) {
-                return true;
-            }
-        }
+        // Public API paths — still run filter to optionally extract userId if token present
         return false;
     }
 
