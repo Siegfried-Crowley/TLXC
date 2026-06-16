@@ -61,6 +61,15 @@ public interface ProblemMapper {
     @Delete("DELETE FROM problem WHERE id = #{id}")
     int deleteById(Integer id);
 
+    @Select("SELECT * FROM problem WHERE status = 'published' AND is_active = TRUE ORDER BY RAND() LIMIT #{limit}")
+    List<Problem> findRandomPublished(@Param("limit") int limit);
+
+    @Update("UPDATE problem SET status = 'published', is_active = TRUE WHERE status != 'published' OR is_active != TRUE")
+    int publishAllDrafts();
+
+    @Select("SELECT COUNT(*) FROM problem WHERE status = 'published' AND is_active = TRUE")
+    int countPublished();
+
     @Select("SELECT COUNT(*) FROM problem")
     int count();
 }
