@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +21,42 @@ public class ProblemService {
     private ProblemMapper problemMapper;
 
     @Autowired
-    private TestCaseMapper testCaseMapper;
+    private TagMapper tagMapper;
 
     @Autowired
-    private TagMapper tagMapper;
+    private TestCaseMapper testCaseMapper;
+
+    public Map<String, Object> getProblemList(String difficulty, String status, Boolean isActive,
+                                               String keyword, Integer tagId, int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        List<Problem> list;
+        long total;
+        if (status == null && isActive == null) {
+            // Use tag-filtered search for published problems
+            list = problemMapper.findPublishedWithFilter(difficulty, tagId, keyword, offset, pageSize);
+            total = problemMapper.countPublishedWithFilter(difficulty, tagId, keyword);
+        } else {
+            list = problemMapper.findByCondition(difficulty, status, isActive, keyword, offset, pageSize);
+            total = problemMapper.countByCondition(difficulty, status, isActive, keyword);
+        }
+        // Attach tags to each problem
+        for (Problem p : list) {
+            p.setTagList(tagMapper.findByProblemId(p.getId()));
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("totalPages", (int) Math.ceil((double) total / pageSize));
+        return result;
+    }
+
+    // Overloaded method for backward compatibility
+    public Map<String, Object> getProblemList(String difficulty, String status, Boolean isActive,
+                                               String keyword, int page, int pageSize) {
+        return getProblemList(difficulty, status, isActive, keyword, null, page, pageSize);
+    }
 
     public Problem getProblemById(Integer id) {
         Problem problem = problemMapper.findById(id);
@@ -35,63 +66,41 @@ public class ProblemService {
         return problem;
     }
 
-    public Map<String, Object> getProblemList(String difficulty, String status, Boolean isActive, String keyword, int page, int pageSize) {
-        int offset = (page - 1) * pageSize;
-        List<Problem> problems = problemMapper.findByCondition(difficulty, status, isActive, keyword, offset, pageSize);
-        long total = problemMapper.countByCondition(difficulty, status, isActive, keyword);
-
-        // Load tags for each problem
-        for (Problem p : problems) {
-            p.setTagList(tagMapper.findByProblemId(p.getId()));
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", problems);
-        result.put("total", total);
-        result.put("page", page);
-        result.put("pageSize", pageSize);
-        result.put("totalPages", (int) Math.ceil((double) total / pageSize));
-        return result;
-    }
-
-    public Problem getProblemWithDetails(Integer id) {
-        return getProblemById(id);
-    }
-
-    public List<TestCase> getTestCases(Integer problemId) {
-        return testCaseMapper.findVisibleByProblemId(problemId);
-    }
-
     public List<Tag> getAllTags() {
         return tagMapper.findAll();
     }
 
+    public List<TestCase> getTestCases(Integer problemId) {
+        return testCaseMapper.findByProblemId(problemId);
+    }
+
     @Transactional
     public Problem createProblem(Problem problem) {
-        problem.setCreatedAt(new Date());
-        problem.setUpdatedAt(new Date());
-        problem.setIsActive(true);
         problemMapper.insert(problem);
-        saveTags(problem);
+        // Handle tags
+        if (problem.getTagIds() != null) {
+            for (Integer tagId : problem.getTagIds()) {
+                tagMapper.addProblemTag(problem.getId(), tagId);
+            }
+        }
         return problem;
     }
 
     @Transactional
     public void updateProblem(Problem problem) {
-        problem.setUpdatedAt(new Date());
         problemMapper.update(problem);
-        saveTags(problem);
+        if (problem.getTagIds() != null) {
+            tagMapper.removeAllProblemTags(problem.getId());
+            for (Integer tagId : problem.getTagIds()) {
+                tagMapper.addProblemTag(problem.getId(), tagId);
+            }
+        }
     }
 
     @Transactional
     public void updateProblemAdmin(Problem problem) {
-        problem.setUpdatedAt(new Date());
         problemMapper.updateAdmin(problem);
-        saveTags(problem);
-    }
-
-    private void saveTags(Problem problem) {
-        if (problem.getTagIds() != null && !problem.getTagIds().isEmpty()) {
+        if (problem.getTagIds() != null) {
             tagMapper.removeAllProblemTags(problem.getId());
             for (Integer tagId : problem.getTagIds()) {
                 tagMapper.addProblemTag(problem.getId(), tagId);
@@ -101,12 +110,14 @@ public class ProblemService {
 
     @Transactional
     public void deleteProblem(Integer id) {
-        tagMapper.removeAllProblemTags(id);
         problemMapper.deleteById(id);
-        testCaseMapper.deleteByProblemId(id);
     }
 
-    public int getProblemCount() {
+    public int countProblems() {
         return problemMapper.count();
+    }
+
+    public List<Problem> getAcceptedProblems(Integer userId) {
+        return problemMapper.findAcceptedByUserId(userId);
     }
 }

@@ -2,6 +2,7 @@ package org.jxiot.tlxc.service;
 
 import org.jxiot.tlxc.dto.JudgeResult;
 import org.jxiot.tlxc.entity.Submission;
+import org.jxiot.tlxc.mapper.SubmissionDetailMapper;
 import org.jxiot.tlxc.mapper.SubmissionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class SubmissionService {
     @Autowired
     private WrongBookService wrongBookService;
 
+    @Autowired
+    private SubmissionDetailMapper submissionDetailMapper;
+
     @Transactional
     public Submission submitCode(Integer userId, Integer problemId, String code, String language) {
         Submission submission = new Submission();
@@ -45,6 +49,11 @@ public class SubmissionService {
 
         // 先保存提交记录，获得自增 ID
         submissionMapper.insert(submission);
+
+        // 保存每个测试用例的详细结果
+        if (result.getCaseResults() != null && !result.getCaseResults().isEmpty()) {
+            judgeService.saveSubmissionDetails(submission.getId(), result.getCaseResults());
+        }
 
         if ("accepted".equals(result.getStatus())) {
             int acceptedCount = submissionMapper.countAcceptedByUserAndProblem(userId, problemId);
@@ -84,6 +93,22 @@ public class SubmissionService {
     }
 
     public Submission getSubmissionById(Integer id) {
-        return submissionMapper.findById(id);
+        Submission s = submissionMapper.findById(id);
+        if (s != null) {
+            s.setDetails(submissionDetailMapper.findBySubmissionId(id));
+        }
+        return s;
+    }
+
+    public List<Map<String, Object>> getUserSubmissionTrend(Integer userId, int days) {
+        return submissionMapper.countByDay(userId, days);
+    }
+
+    public List<Map<String, Object>> getUserAcceptedByDifficulty(Integer userId) {
+        return submissionMapper.countAcceptedByDifficulty(userId);
+    }
+
+    public List<Submission> getUserProblemHistory(Integer userId, Integer problemId) {
+        return submissionMapper.findByUserAndProblem(userId, problemId);
     }
 }

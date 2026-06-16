@@ -21,7 +21,6 @@ public class ContestController {
     @Autowired
     private ContestService contestService;
 
-    // 获取今日比赛（含题目信息）
     @GetMapping("/today")
     public ApiResponse<Map<String, Object>> getTodayContest(HttpServletRequest request) {
         DailyContest contest = contestService.getTodayContest();
@@ -33,7 +32,6 @@ public class ContestController {
         result.put("contest", contest);
         result.put("problems", contest.getProblems());
 
-        // 如果用户已登录，返回用户参与状态
         Integer userId = (Integer) request.getAttribute("userId");
         if (userId != null) {
             ContestParticipation participation = contestService.getUserParticipation(contest.getId(), userId);
@@ -43,7 +41,6 @@ public class ContestController {
         return ApiResponse.success(result);
     }
 
-    // 参加今日比赛
     @PostMapping("/today/join")
     public ApiResponse<ContestParticipation> joinTodayContest(@RequestAttribute Integer userId) {
         DailyContest todayContest = contestService.getTodayContest();
@@ -54,10 +51,22 @@ public class ContestController {
         return ApiResponse.success(participation);
     }
 
-    // 获取指定比赛的排行榜
     @GetMapping("/{contestId}/rankings")
     public ApiResponse<List<ContestParticipation>> getContestRankings(@PathVariable Integer contestId) {
         List<ContestParticipation> rankings = contestService.getContestRankings(contestId);
         return ApiResponse.success(rankings);
+    }
+
+    @PostMapping("/{contestId}/submit/{problemId}")
+    public ApiResponse<Void> submitInContest(@PathVariable Integer contestId,
+                                              @PathVariable Integer problemId,
+                                              @RequestAttribute Integer userId) {
+        contestService.updateParticipationScore(contestId, userId);
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/recent")
+    public ApiResponse<List<DailyContest>> getRecentContests(@RequestParam(defaultValue = "10") int limit) {
+        return ApiResponse.success(contestService.getRecentContests(limit));
     }
 }

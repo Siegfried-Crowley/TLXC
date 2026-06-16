@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -41,9 +42,9 @@ public class SubmissionController {
         }
 
         Submission submission = submissionService.submitCode(userId, problemId, code, language);
-
         String statusText = "accepted".equals(submission.getStatus()) ? "通过" :
                 "wrong_answer".equals(submission.getStatus()) ? "答案错误" : "运行错误";
+
         String prompt = "你是一个编程评测助手。用户提交了一段" + language + "代码来解决算法题。\n\n"
                 + "## 题目\n"
                 + problem.getTitle() + "\n\n"
@@ -85,5 +86,21 @@ public class SubmissionController {
             @RequestParam(defaultValue = "20") int pageSize) {
         Map<String, Object> result = submissionService.getUserSubmissions(userId, page, pageSize);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<Submission> getSubmissionDetail(@PathVariable Integer id) {
+        Submission submission = submissionService.getSubmissionById(id);
+        if (submission == null) {
+            return ApiResponse.error(404, "提交记录不存在");
+        }
+        return ApiResponse.success(submission);
+    }
+
+    @GetMapping("/history/{problemId}")
+    public ApiResponse<List<Submission>> getSubmissionHistory(
+            @PathVariable Integer problemId,
+            @RequestAttribute Integer userId) {
+        return ApiResponse.success(submissionService.getUserProblemHistory(userId, problemId));
     }
 }

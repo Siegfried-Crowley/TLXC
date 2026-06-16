@@ -1,7 +1,7 @@
 package org.jxiot.tlxc.service;
 
 import org.jxiot.tlxc.entity.User;
-import org.jxiot.tlxc.mapper.UserMapper;
+import org.jxiot.tlxc.mapper.*;
 import org.jxiot.tlxc.util.JwtUtil;
 import org.jxiot.tlxc.util.PasswordUtil;
 import org.slf4j.Logger;
@@ -26,6 +26,39 @@ public class UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserProfileMapper userProfileMapper;
+
+    @Autowired
+    private SubmissionMapper submissionMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
+
+    @Autowired
+    private DiscussionMapper discussionMapper;
+
+    @Autowired
+    private NotificationMapper notificationMapper;
+
+    @Autowired
+    private UserFavoriteMapper userFavoriteMapper;
+
+    @Autowired
+    private UserFollowMapper userFollowMapper;
+
+    @Autowired
+    private PointLogMapper pointLogMapper;
+
+    @Autowired
+    private WrongBookMapper wrongBookMapper;
+
+    @Autowired
+    private ContestParticipationMapper contestParticipationMapper;
+
+    @Autowired
+    private AuditLogMapper auditLogMapper;
 
     public Map<String, Object> login(String username, String password) {
         User user = userMapper.findByUsername(username);
@@ -82,6 +115,19 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Integer id) {
+        // Cascade delete all related data
+        userProfileMapper.deleteByUserId(id);
+        submissionMapper.deleteByUserId(id);
+        commentMapper.deleteByUserId(id);
+        discussionMapper.deleteByUserId(id);
+        notificationMapper.deleteByUserId(id);
+        userFavoriteMapper.deleteByUserId(id);
+        userFollowMapper.deleteByUserId(id);
+        pointLogMapper.deleteByUserId(id);
+        wrongBookMapper.deleteByUserId(id);
+        contestParticipationMapper.deleteByUserId(id);
+        auditLogMapper.deleteByAdminId(id);
+        // Finally delete the user
         userMapper.deleteById(id);
     }
 

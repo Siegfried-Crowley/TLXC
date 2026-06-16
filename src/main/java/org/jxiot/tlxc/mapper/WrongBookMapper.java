@@ -24,4 +24,7 @@ public interface WrongBookMapper {
 
     @Update("UPDATE wrong_book SET status=#{status}, updated_at=NOW() WHERE id=#{id}")
     int updateStatus(WrongBook wrongBook);
+
+    @Delete("DELETE FROM wrong_book WHERE user_id = #{userId}")
+    int deleteByUserId(Integer userId);
 }

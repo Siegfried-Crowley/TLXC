@@ -2,7 +2,9 @@ package org.jxiot.tlxc.service;
 
 import org.jxiot.tlxc.dto.JudgeResult;
 import org.jxiot.tlxc.entity.Submission;
+import org.jxiot.tlxc.entity.SubmissionDetail;
 import org.jxiot.tlxc.entity.TestCase;
+import org.jxiot.tlxc.mapper.SubmissionDetailMapper;
 import org.jxiot.tlxc.mapper.SubmissionMapper;
 import org.jxiot.tlxc.mapper.TestCaseMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +38,9 @@ public class JudgeService {
     @Autowired
     private SubmissionMapper submissionMapper;
 
+    @Autowired
+    private SubmissionDetailMapper submissionDetailMapper;
+
     public JudgeResult judgeCode(Integer problemId, String code, String language) {
         List<TestCase> testCases = testCaseMapper.findByProblemId(problemId);
 
@@ -43,29 +49,43 @@ public class JudgeService {
         int maxRuntime = 0;
         String errorMessage = "";
         String status = "accepted";
+        List<JudgeResult.TestCaseResult> caseResults = new ArrayList<>();
 
         for (TestCase testCase : testCases) {
+            JudgeResult.TestCaseResult caseResult = new JudgeResult.TestCaseResult();
+            caseResult.setTestCaseId(testCase.getId());
+            caseResult.setInputData(testCase.getInputData());
+            caseResult.setExpectedOutput(testCase.getExpectedOutput());
+            caseResult.setHidden(testCase.getIsHidden());
+
             try {
                 long startTime = System.currentTimeMillis();
-
                 String result = executeCode(code, language, testCase.getInputData());
-
                 long endTime = System.currentTimeMillis();
                 int runtime = (int) (endTime - startTime);
                 maxRuntime = Math.max(maxRuntime, runtime);
 
+                caseResult.setActualOutput(result);
+                caseResult.setRuntimeMs(runtime);
+
                 if (result.trim().equals(testCase.getExpectedOutput().trim())) {
                     passedCases++;
+                    caseResult.setPassed(true);
                 } else {
-                    status = "wrong_answer";
-                    errorMessage = "输出不匹配 - 预期: " + testCase.getExpectedOutput().trim() + ", 实际: " + result.trim();
-                    break;
+                    caseResult.setPassed(false);
+                    if ("accepted".equals(status)) {
+                        status = "wrong_answer";
+                        errorMessage = "测试用例 #" + testCase.getId() + " 输出不匹配";
+                    }
                 }
             } catch (Exception e) {
+                caseResult.setPassed(false);
+                caseResult.setActualOutput(e.getMessage());
                 status = "error";
-                errorMessage = e.getMessage();
-                break;
+                errorMessage = "测试用例 #" + testCase.getId() + " 执行错误: " + e.getMessage();
+                // 继续执行其他用例以收集更多信息
             }
+            caseResults.add(caseResult);
         }
 
         JudgeResult result = new JudgeResult();
@@ -74,8 +94,25 @@ public class JudgeService {
         result.setPassedCases(passedCases);
         result.setTotalCases(totalCases);
         result.setErrorMessage(errorMessage);
+        result.setCaseResults(caseResults);
 
         return result;
+    }
+
+    public void saveSubmissionDetails(Integer submissionId, List<JudgeResult.TestCaseResult> caseResults) {
+        List<SubmissionDetail> details = new ArrayList<>();
+        for (JudgeResult.TestCaseResult cr : caseResults) {
+            SubmissionDetail d = new SubmissionDetail();
+            d.setSubmissionId(submissionId);
+            d.setTestCaseId(cr.getTestCaseId());
+            d.setPassed(cr.isPassed());
+            d.setInputData(cr.getInputData());
+            d.setExpectedOutput(cr.getExpectedOutput());
+            d.setActualOutput(cr.getActualOutput());
+            d.setRuntimeMs(cr.getRuntimeMs());
+            details.add(d);
+        }
+        submissionDetailMapper.batchInsert(details);
     }
 
     private String executeCode(String code, String language, String inputData) throws Exception {
@@ -92,7 +129,6 @@ public class JudgeService {
         try {
             tempFile = Files.createTempFile("user_code_", ".py");
             Files.writeString(tempFile, sanitizePythonCode(code), StandardCharsets.UTF_8);
-
             ProcessBuilder pb = new ProcessBuilder("python", tempFile.toAbsolutePath().toString());
             return runProcess(pb, inputData);
         } finally {
@@ -104,7 +140,6 @@ public class JudgeService {
         Path tempDir = Files.createTempDirectory("javacode_");
         Path sourceFile = tempDir.resolve("Main.java");
         try {
-            // Wrap user code in a Main class with solve method
             String wrappedCode = "import java.util.*;\nimport java.math.*;\n\npublic class Main {\n"
                     + code + "\n"
                     + "    public static void main(String[] args) {\n"
@@ -115,20 +150,15 @@ public class JudgeService {
                     + "}\n";
             Files.writeString(sourceFile, wrappedCode, StandardCharsets.UTF_8);
 
-            // Compile
             ProcessBuilder compilePb = new ProcessBuilder(javaCompiler, sourceFile.toAbsolutePath().toString());
             Process compileProcess = compilePb.start();
             boolean compiled = compileProcess.waitFor(15, TimeUnit.SECONDS);
-            if (!compiled) {
-                compileProcess.destroyForcibly();
-                throw new RuntimeException("Java 编译超时");
-            }
+            if (!compiled) { compileProcess.destroyForcibly(); throw new RuntimeException("Java 编译超时"); }
             if (compileProcess.exitValue() != 0) {
                 String err = readStream(compileProcess.getErrorStream());
                 throw new RuntimeException("Java 编译错误:\n" + err);
             }
 
-            // Run
             ProcessBuilder runPb = new ProcessBuilder("java", "-cp", tempDir.toAbsolutePath().toString(), "Main");
             return runProcess(runPb, inputData);
         } finally {
@@ -154,10 +184,7 @@ public class JudgeService {
             ProcessBuilder compilePb = new ProcessBuilder(cppCompiler, "-o", outputFile.toString(), sourceFile.toAbsolutePath().toString());
             Process compileProcess = compilePb.start();
             boolean compiled = compileProcess.waitFor(15, TimeUnit.SECONDS);
-            if (!compiled) {
-                compileProcess.destroyForcibly();
-                throw new RuntimeException("C++ 编译超时");
-            }
+            if (!compiled) { compileProcess.destroyForcibly(); throw new RuntimeException("C++ 编译超时"); }
             if (compileProcess.exitValue() != 0) {
                 String err = readStream(compileProcess.getErrorStream());
                 throw new RuntimeException("C++ 编译错误:\n" + err);
@@ -183,7 +210,6 @@ public class JudgeService {
                     + "    console.log(solve(input.trim()));\n"
                     + "});\n";
             Files.writeString(tempFile, wrappedCode, StandardCharsets.UTF_8);
-
             ProcessBuilder pb = new ProcessBuilder("node", tempFile.toAbsolutePath().toString());
             return runProcess(pb, inputData);
         } finally {
@@ -195,7 +221,6 @@ public class JudgeService {
         pb.redirectErrorStream(true);
         Process process = pb.start();
 
-        // Feed input
         try (OutputStream os = process.getOutputStream()) {
             os.write(inputData.getBytes(StandardCharsets.UTF_8));
             os.flush();

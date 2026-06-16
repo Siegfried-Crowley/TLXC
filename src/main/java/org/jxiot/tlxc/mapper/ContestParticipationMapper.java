@@ -21,4 +21,7 @@ public interface ContestParticipationMapper {
     @Update("UPDATE contest_participation SET total_score=#{totalScore}, accepted_count=#{acceptedCount}, " +
             "total_runtime_ms=#{totalRuntimeMs}, submitted_at=NOW() WHERE id=#{id}")
     int update(ContestParticipation participation);
+
+    @Delete("DELETE FROM contest_participation WHERE user_id = #{userId}")
+    int deleteByUserId(Integer userId);
 }

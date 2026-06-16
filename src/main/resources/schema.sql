@@ -185,6 +185,139 @@ CREATE TABLE IF NOT EXISTS `contest_participation` (
     FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ============================================================
+-- 新功能表结构 (讨论区/收藏/通知/关注/日志/提交详情等)
+-- ============================================================
+
+-- 讨论/题解表
+CREATE TABLE IF NOT EXISTS `discussion` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `problem_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `content` TEXT NOT NULL,
+    `type` VARCHAR(20) DEFAULT 'discussion',
+    `view_count` INT DEFAULT 0,
+    `like_count` INT DEFAULT 0,
+    `comment_count` INT DEFAULT 0,
+    `is_pinned` BOOLEAN DEFAULT FALSE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_problem_id (`problem_id`),
+    INDEX idx_user_id (`user_id`),
+    INDEX idx_type (`type`),
+    INDEX idx_created_at (`created_at`),
+    FOREIGN KEY (`problem_id`) REFERENCES `problem`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 评论表
+CREATE TABLE IF NOT EXISTS `comment` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `discussion_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `parent_id` INT DEFAULT NULL,
+    `content` TEXT NOT NULL,
+    `like_count` INT DEFAULT 0,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_discussion_id (`discussion_id`),
+    INDEX idx_user_id (`user_id`),
+    INDEX idx_parent_id (`parent_id`),
+    FOREIGN KEY (`discussion_id`) REFERENCES `discussion`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`parent_id`) REFERENCES `comment`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 收藏题目表
+CREATE TABLE IF NOT EXISTS `user_favorite` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `problem_id` INT NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_problem (`user_id`, `problem_id`),
+    INDEX idx_user_id (`user_id`),
+    INDEX idx_problem_id (`problem_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`problem_id`) REFERENCES `problem`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 消息通知表
+CREATE TABLE IF NOT EXISTS `notification` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `type` VARCHAR(50) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `content` TEXT,
+    `related_id` INT DEFAULT NULL,
+    `is_read` BOOLEAN DEFAULT FALSE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (`user_id`),
+    INDEX idx_is_read (`is_read`),
+    INDEX idx_created_at (`created_at`),
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户关注表
+CREATE TABLE IF NOT EXISTS `user_follow` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `follower_id` INT NOT NULL,
+    `following_id` INT NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_follower_following (`follower_id`, `following_id`),
+    INDEX idx_follower_id (`follower_id`),
+    INDEX idx_following_id (`following_id`),
+    FOREIGN KEY (`follower_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`following_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户个人资料扩展表
+CREATE TABLE IF NOT EXISTS `user_profile` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL UNIQUE,
+    `bio` VARCHAR(500) DEFAULT '',
+    `avatar_url` VARCHAR(255) DEFAULT '',
+    `github_url` VARCHAR(255) DEFAULT '',
+    `website_url` VARCHAR(255) DEFAULT '',
+    `organization` VARCHAR(128) DEFAULT '',
+    `location` VARCHAR(128) DEFAULT '',
+    `accepted_problems` INT DEFAULT 0,
+    `total_submissions` INT DEFAULT 0,
+    `acceptance_rate` DECIMAL(5,2) DEFAULT 0.00,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 操作日志表 (管理员)
+CREATE TABLE IF NOT EXISTS `audit_log` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `admin_id` INT NOT NULL,
+    `action` VARCHAR(50) NOT NULL,
+    `target_type` VARCHAR(50),
+    `target_id` INT,
+    `detail` TEXT,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_admin_id (`admin_id`),
+    INDEX idx_action (`action`),
+    INDEX idx_created_at (`created_at`),
+    FOREIGN KEY (`admin_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 提交详情表 (每个测试用例的判题结果)
+CREATE TABLE IF NOT EXISTS `submission_detail` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `submission_id` INT NOT NULL,
+    `test_case_id` INT NOT NULL,
+    `passed` BOOLEAN DEFAULT FALSE,
+    `input_data` TEXT,
+    `expected_output` TEXT,
+    `actual_output` TEXT,
+    `runtime_ms` INT DEFAULT 0,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_submission_id (`submission_id`),
+    FOREIGN KEY (`submission_id`) REFERENCES `submission`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`test_case_id`) REFERENCES `test_case`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 插入默认管理员账号 (密码: admin123)
 INSERT INTO `user` (`username`, `hashed_password`, `nickname`, `role`, `status`, `total_points`) VALUES
     ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '管理员', 'admin', 'active', 0);

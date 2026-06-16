@@ -72,4 +72,37 @@ public interface ProblemMapper {
 
     @Select("SELECT COUNT(*) FROM problem")
     int count();
+
+    // Tag and difficulty combined search
+    @Select("<script>" +
+            "SELECT DISTINCT p.* FROM problem p " +
+            "<if test='tagId != null'>JOIN problem_tag pt ON p.id = pt.problem_id</if>" +
+            "WHERE p.status = 'published' AND p.is_active = TRUE " +
+            "<if test='difficulty != null'> AND p.difficulty = #{difficulty}</if>" +
+            "<if test='tagId != null'> AND pt.tag_id = #{tagId}</if>" +
+            "<if test='keyword != null'> AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.description LIKE CONCAT('%', #{keyword}, '%'))</if>" +
+            " ORDER BY p.id ASC" +
+            " LIMIT #{pageSize} OFFSET #{offset}" +
+            "</script>")
+    List<Problem> findPublishedWithFilter(@Param("difficulty") String difficulty,
+                                          @Param("tagId") Integer tagId,
+                                          @Param("keyword") String keyword,
+                                          @Param("offset") int offset,
+                                          @Param("pageSize") int pageSize);
+
+    @Select("<script>" +
+            "SELECT COUNT(DISTINCT p.id) FROM problem p " +
+            "<if test='tagId != null'>JOIN problem_tag pt ON p.id = pt.problem_id</if>" +
+            "WHERE p.status = 'published' AND p.is_active = TRUE " +
+            "<if test='difficulty != null'> AND p.difficulty = #{difficulty}</if>" +
+            "<if test='tagId != null'> AND pt.tag_id = #{tagId}</if>" +
+            "<if test='keyword != null'> AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.description LIKE CONCAT('%', #{keyword}, '%'))</if>" +
+            "</script>")
+    long countPublishedWithFilter(@Param("difficulty") String difficulty,
+                                   @Param("tagId") Integer tagId,
+                                   @Param("keyword") String keyword);
+
+    @Select("SELECT p.* FROM problem p WHERE p.id IN " +
+            "(SELECT DISTINCT s.problem_id FROM submission s WHERE s.user_id = #{userId} AND s.status = 'accepted')")
+    List<Problem> findAcceptedByUserId(Integer userId);
 }

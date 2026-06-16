@@ -14,4 +14,7 @@ public interface PointLogMapper {
             "VALUES(#{userId}, #{problemId}, #{points}, #{reason}, NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(PointLog pointLog);
+
+    @Delete("DELETE FROM point_log WHERE user_id = #{userId}")
+    int deleteByUserId(Integer userId);
 }

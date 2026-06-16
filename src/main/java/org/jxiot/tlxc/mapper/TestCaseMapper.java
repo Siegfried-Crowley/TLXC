@@ -20,4 +20,7 @@ public interface TestCaseMapper {
 
     @Delete("DELETE FROM test_case WHERE problem_id = #{problemId}")
     int deleteByProblemId(Integer problemId);
+
+    @Delete("DELETE FROM test_case WHERE id = #{id}")
+    int deleteById(Integer id);
 }
