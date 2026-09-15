@@ -39,3 +39,6 @@ build/
 server.log
 classpath.txt
 $null
+
+### Local config: never commit real values ###
+src/main/resources/application.properties
