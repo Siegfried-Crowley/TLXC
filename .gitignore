@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### AI tooling checkpoints / stray artefacts ###
+.proxyai/
+**/.proxyai/
+*.log
+server.log
+classpath.txt
+$null
